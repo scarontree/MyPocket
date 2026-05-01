@@ -36,8 +36,10 @@ export const IconTrash = icon(['M3 6h18', 'M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v
 export const IconEdit = icon(['M17 3l4 4L7 21H3v-4L17 3Z'])
 export const IconX = icon(['M18 6 6 18', 'M6 6l12 12'])
 export const IconSettings = icon([
-  ['circle', { cx: '12', cy: '12', r: '3' }],
-  'M12 1v4m0 14v4m-9-9h4m14 0h4m-3.3-6.7-2.8 2.8m-9.8 9.8-2.8 2.8m0-15.4 2.8 2.8m9.8 9.8 2.8 2.8',
+  'M4 21v-7', 'M4 10V3',
+  'M12 21v-9', 'M12 8V3',
+  'M20 21v-5', 'M20 12V3',
+  'M1 14h6', 'M9 8h6', 'M17 16h6'
 ])
 export const IconDownload = icon(['M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4', 'M7 10l5 5 5-5', 'M12 15V3'])
 export const IconUpload = icon(['M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4', 'M17 8l-5-5-5 5', 'M12 3v12'])
