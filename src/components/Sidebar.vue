@@ -139,9 +139,9 @@ function doImport() {
         <button class="footer-btn" @click="showExportMenu = !showExportMenu"><IconDownload :size="15" /><span>导出</span></button>
         <Transition name="pop">
           <div v-if="showExportMenu" class="export-menu">
-            <button @click="exportExcel">📊 Excel (.xlsx)</button>
-            <button @click="exportCSV">📄 CSV (.csv)</button>
-            <button @click="exportJSON">🔧 JSON (完整备份)</button>
+            <button @click="exportExcel">Excel (.xlsx)</button>
+            <button @click="exportCSV">CSV (.csv)</button>
+            <button @click="exportJSON">JSON (完整备份)</button>
           </div>
         </Transition>
       </div>
