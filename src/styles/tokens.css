@@ -1,0 +1,68 @@
+/* ── Design Tokens ── */
+:root {
+  /* Surface */
+  --bg: #f5f3ef;
+  --surface: #fffefa;
+  --surface-2: #f0ece4;
+  --surface-3: #e8e2d8;
+
+  /* Text */
+  --text: #2a2520;
+  --text-2: #7a7168;
+  --text-3: #a89e94;
+
+  /* Border */
+  --border: #e8e2d8;
+  --border-2: #d5cdc2;
+
+  /* Accent */
+  --accent: #e07a4a;
+  --accent-hover: #c4633a;
+  --accent-soft: #fdf0ea;
+
+  /* Semantic */
+  --green: #4a9e6d;
+  --green-soft: #edf7f1;
+  --red: #d45454;
+  --red-soft: #fceaea;
+  --blue: #5484c4;
+  --blue-soft: #eaf0f8;
+  --purple: #8a6bbf;
+  --purple-soft: #f0ecf7;
+  --yellow: #c4a034;
+  --yellow-soft: #faf5e6;
+  --pink: #c47a9e;
+  --pink-soft: #f8eef3;
+  --gray: #7a8a9e;
+  --gray-soft: #f0f2f5;
+
+  /* Category Colors */
+  --cat-food: #e07a4a;
+  --cat-shop: #5484c4;
+  --cat-pay: #8a6bbf;
+  --cat-transport: #4a9e6d;
+  --cat-fun: #c4a034;
+  --cat-daily: #c47a9e;
+  --cat-other: #7a8a9e;
+
+  /* Radius */
+  --radius: 10px;
+  --radius-lg: 16px;
+  --radius-full: 9999px;
+
+  /* Shadow */
+  --shadow: 0 1px 3px rgba(42,37,32,.06), 0 4px 12px rgba(42,37,32,.04);
+  --shadow-lg: 0 4px 20px rgba(42,37,32,.08);
+  --shadow-accent: 0 4px 16px rgba(224,122,74,.25);
+
+  /* Font */
+  --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-body: 'Noto Sans SC', 'Plus Jakarta Sans', system-ui, sans-serif;
+
+  /* Layout */
+  --sidebar-w: 220px;
+
+  /* Timing */
+  --ease-out: cubic-bezier(.4, 0, .2, 1);
+  --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
+}
