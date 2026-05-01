@@ -127,7 +127,7 @@ function handleKey(e) {
   display: flex; align-items: center; justify-content: space-between;
   padding: .5rem 1rem .75rem; gap: .5rem;
 }
-.hint { font-size: .7rem; color: var(--text-3); }
+.hint { font-size: .7rem; color: var(--text-3); white-space: nowrap; }
 .footer-right { display: flex; align-items: center; gap: .75rem; }
 .error-msg { font-size: .75rem; color: var(--red); }
 
@@ -144,5 +144,11 @@ function handleKey(e) {
 .loading-dot {
   width: 6px; height: 6px; border-radius: 50%;
   background: currentColor; animation: pulse 1s infinite;
+}
+
+@media (max-width: 720px) {
+  .hint { display: none; }
+  .input-footer { justify-content: flex-end; }
+  .footer-right { width: 100%; justify-content: flex-end; }
 }
 </style>

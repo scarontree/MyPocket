@@ -10,6 +10,7 @@ const store = useLedgerStore()
 
 const existing = props.txId ? store.transactions.find(t => t.id === props.txId) : null
 const form = ref({
+  type: existing?.type || 'expense',
   name: existing?.name || '',
   amount: existing?.amount || '',
   date: existing?.date || todayStr(),
@@ -19,6 +20,7 @@ const form = ref({
 
 function save() {
   const data = { ...form.value, amount: parseFloat(form.value.amount) }
+  if (data.type === 'income') data.category = 'other'
   if (!data.name || !data.amount) return
   if (existing) {
     store.updateTransaction(props.txId, data)
@@ -40,66 +42,78 @@ function remove() {
 </script>
 
 <template>
-  <div class="overlay" @click.self="emit('close')">
-    <div class="dialog">
-      <div class="dialog-header">
-        <h2>{{ existing ? '编辑记录' : '手动记一笔' }}</h2>
-        <button class="close-btn" @click="emit('close')"><IconX :size="18" /></button>
-      </div>
-      <form class="dialog-body" @submit.prevent="save">
-        <div class="form-group">
-          <label>项目名称</label>
-          <input v-model="form.name" placeholder="买了什么？" required>
+  <Teleport to="body">
+    <div class="overlay" @click.self="emit('close')">
+      <div class="dialog">
+        <div class="dialog-header">
+          <h2>{{ existing ? '编辑记录' : '手动记一笔' }}</h2>
+          <button class="close-btn" @click="emit('close')"><IconX :size="18" /></button>
         </div>
-        <div class="form-row">
+        <form class="dialog-body" @submit.prevent="save">
           <div class="form-group">
-            <label>金额</label>
-            <div class="money-input">
-              <span class="prefix">¥</span>
-              <input v-model.number="form.amount" type="number" placeholder="0.00" step="0.01" required>
+            <label>记录类型</label>
+            <div class="type-switch">
+              <button type="button" :class="{ selected: form.type === 'expense' }" @click="form.type = 'expense'">支出</button>
+              <button type="button" :class="{ selected: form.type === 'income' }" @click="form.type = 'income'">存入</button>
             </div>
           </div>
           <div class="form-group">
-            <label>日期</label>
-            <input v-model="form.date" type="date" required>
+            <label>项目名称</label>
+            <input v-model="form.name" :placeholder="form.type === 'income' ? '工资、退款、转入...' : '买了什么？'" required>
           </div>
-        </div>
-        <div class="form-group">
-          <label>分类</label>
-          <div class="cat-picker">
-            <button
-              v-for="cat in store.categories" :key="cat.id"
-              type="button" class="cat-chip"
-              :class="{ selected: form.category === cat.id }"
-              @click="form.category = cat.id"
-            >{{ cat.name }}</button>
+          <div class="form-row">
+            <div class="form-group">
+              <label>金额</label>
+              <div class="money-input">
+                <span class="prefix">¥</span>
+                <input v-model.number="form.amount" type="number" placeholder="0.00" step="0.01" required>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>日期</label>
+              <input v-model="form.date" type="date" required>
+            </div>
           </div>
-        </div>
-        <div class="form-group">
-          <label>备注 <span class="optional">可选</span></label>
-          <input v-model="form.note" placeholder="补充说明">
-        </div>
-        <div class="dialog-actions">
-          <button v-if="existing" type="button" class="del-btn" @click="remove">
-            <IconTrash :size="15" /> 删除
-          </button>
-          <button type="submit" class="save-btn">保存</button>
-        </div>
-      </form>
+          <div v-if="form.type === 'expense'" class="form-group">
+            <label>分类</label>
+            <div class="cat-picker">
+              <button
+                v-for="cat in store.categories" :key="cat.id"
+                type="button" class="cat-chip"
+                :class="{ selected: form.category === cat.id }"
+                @click="form.category = cat.id"
+              >{{ cat.name }}</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>备注 <span class="optional">可选</span></label>
+            <input v-model="form.note" placeholder="补充说明">
+          </div>
+          <div class="dialog-actions">
+            <button v-if="existing" type="button" class="del-btn" @click="remove">
+              <IconTrash :size="15" /> 删除
+            </button>
+            <button type="submit" class="save-btn">保存</button>
+          </div>
+        </form>
+      </div>
     </div>
-  </div>
+  </Teleport>
 </template>
 
 <style scoped>
 .overlay {
   position: fixed; inset: 0;
-  background: rgba(42,37,32,.35); backdrop-filter: blur(4px);
-  z-index: 200; display: flex; align-items: center; justify-content: center;
-  padding: 1rem; animation: fadeIn .2s ease;
+  background: rgba(42,37,32,.42); backdrop-filter: blur(6px);
+  z-index: 200; display: flex; align-items: flex-start; justify-content: center;
+  padding: clamp(1rem, 6vh, 3rem) 1rem 1rem;
+  overflow-y: auto; animation: fadeIn .2s ease;
 }
 .dialog {
   background: var(--surface); border-radius: var(--radius-lg);
   width: 100%; max-width: 420px; box-shadow: var(--shadow-lg);
+  max-height: calc(100dvh - 2rem);
+  display: flex; flex-direction: column; overflow: hidden;
   animation: slideUp .25s var(--ease-out);
 }
 .dialog-header {
@@ -113,7 +127,7 @@ function remove() {
 }
 .close-btn:hover { background: var(--surface-2); color: var(--text); }
 
-.dialog-body { padding: .75rem 1.5rem 1.5rem; }
+.dialog-body { padding: .75rem 1.5rem 1.5rem; overflow-y: auto; }
 .form-group { margin-bottom: 1rem; }
 .form-group label { display: block; font-size: .8rem; font-weight: 600; color: var(--text-2); margin-bottom: .3rem; }
 .optional { font-weight: 400; color: var(--text-3); }
@@ -124,6 +138,17 @@ function remove() {
 }
 .form-group input:focus { border-color: var(--accent); }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+
+.type-switch {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .35rem;
+}
+.type-switch button {
+  padding: .45rem .65rem; border: 1px solid var(--border);
+  border-radius: var(--radius); color: var(--text-2); font-weight: 600;
+  transition: all .15s;
+}
+.type-switch button.selected { background: var(--accent); color: #fff; border-color: var(--accent); }
 
 .money-input {
   display: flex; align-items: center; gap: .2rem;
@@ -160,6 +185,8 @@ function remove() {
 .del-btn:hover { background: var(--red); color: #fff; }
 
 @media (max-width: 720px) {
+  .overlay { padding: .75rem; }
+  .dialog { max-height: calc(100dvh - 1.5rem); }
   .form-row { grid-template-columns: 1fr; }
 }
 </style>

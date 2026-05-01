@@ -1,11 +1,16 @@
 <script setup>
 import { ref } from 'vue'
 import { useLedgerStore } from '../stores/ledger'
+import { useSettingsStore } from '../stores/settings'
 import { IconGrid, IconList, IconWallet, IconChevLeft, IconChevRight, IconDownload, IconUpload, IconSettings } from '../icons'
+import { createBackup, restoreBackup } from '../utils/backup'
+import { decodeBackupCsv, encodeBackupCsv } from '../utils/csvBackup'
+import { decodeBackupWorkbook, decodeLegacyWorkbook, encodeBackupWorkbook } from '../utils/excelBackup'
 
 const props = defineProps(['currentView', 'open'])
 const emit = defineEmits(['navigate', 'close', 'openSettings'])
 const store = useLedgerStore()
+const settings = useSettingsStore()
 
 const navItems = [
   { id: 'dashboard', label: '总览', icon: IconGrid },
@@ -27,79 +32,74 @@ function download(blob, filename) {
 
 // ── Export: JSON (full backup) ──
 function exportJSON() {
-  download(new Blob([store.exportData()], { type: 'application/json' }), `mypocket_${fileDate()}.json`)
+  const backup = createBackup(store, settings)
+  download(new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' }), `mypocket_full_${fileDate()}.json`)
   showExportMenu.value = false
-  window.__toast?.('已导出 JSON ✓')
+  window.__toast?.('已导出完整备份（含 API Key）✓')
 }
 
 // ── Export: CSV ──
 function exportCSV() {
-  const rows = [['日期', '名称', '金额', '分类', '分类ID', '备注', '月份']]
-  store.monthTx.forEach(tx => {
-    const cat = store.getCat(tx.category)
-    rows.push([tx.date, tx.name, tx.amount.toFixed(2), cat.name, tx.category, tx.note || '', tx.month])
-  })
-  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n')
-  const bom = '\uFEFF' // UTF-8 BOM for Excel compatibility
-  download(new Blob([bom + csv], { type: 'text/csv;charset=utf-8' }), `mypocket_${store.currentMonthKey}_${fileDate()}.csv`)
+  const csv = encodeBackupCsv(createBackup(store, settings))
+  download(new Blob([csv], { type: 'text/csv;charset=utf-8' }), `mypocket_full_${fileDate()}.csv`)
   showExportMenu.value = false
-  window.__toast?.('已导出 CSV ✓')
+  window.__toast?.('已导出完整 CSV（含 API Key）✓')
 }
 
 // ── Export: Excel ──
 async function exportExcel() {
   const XLSX = await import('xlsx')
-  const wb = XLSX.utils.book_new()
-
-  // Transactions sheet
-  const txData = store.monthTx.map(tx => ({
-    '日期': tx.date,
-    '名称': tx.name,
-    '金额': tx.amount,
-    '分类': store.getCat(tx.category).name,
-    '备注': tx.note || '',
-  }))
-  if (txData.length === 0) txData.push({ '日期': '', '名称': '暂无记录', '金额': 0, '分类': '', '备注': '' })
-  const ws1 = XLSX.utils.json_to_sheet(txData)
-  ws1['!cols'] = [{ wch: 12 }, { wch: 16 }, { wch: 10 }, { wch: 10 }, { wch: 20 }]
-  XLSX.utils.book_append_sheet(wb, ws1, `${store.currentYear}年${store.currentMonth}月`)
-
-  // Assets sheet
-  const assetData = store.assets.map(a => ({
-    '账户': a.name,
-    '余额': a.balance,
-    '类型': a.type,
-    '备注': a.note || '',
-  }))
-  if (assetData.length > 0) {
-    const ws2 = XLSX.utils.json_to_sheet(assetData)
-    ws2['!cols'] = [{ wch: 16 }, { wch: 12 }, { wch: 12 }, { wch: 20 }]
-    XLSX.utils.book_append_sheet(wb, ws2, '资产')
-  }
-
-  // Summary row at bottom of tx sheet
-  const buf = XLSX.write(wb, { type: 'array', bookType: 'xlsx' })
-  download(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), `mypocket_${store.currentMonthKey}_${fileDate()}.xlsx`)
+  const buf = encodeBackupWorkbook(XLSX, createBackup(store, settings))
+  download(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), `mypocket_full_${fileDate()}.xlsx`)
   showExportMenu.value = false
-  window.__toast?.('已导出 Excel ✓')
+  window.__toast?.('已导出完整 Excel（含 API Key）✓')
 }
 
 // ── Import ──
 function doImport() {
   const input = document.createElement('input')
   input.type = 'file'
-  input.accept = '.json'
-  input.onchange = () => {
+  input.accept = '.json,.csv,.xlsx,.xls'
+  input.onchange = async () => {
     const file = input.files[0]
     if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => {
-      try {
-        const data = JSON.parse(reader.result)
-        if (data.transactions) { store.importData(data); window.__toast?.('导入成功 ✓') }
-      } catch { window.__toast?.('导入失败，文件格式不对') }
+    try {
+      const ext = file.name.split('.').pop()?.toLowerCase()
+      if (ext === 'json') {
+        const data = JSON.parse(await file.text())
+        const kind = restoreBackup(data, store, settings)
+        window.__toast?.(kind === 'full' ? '导入完整备份成功 ✓' : '导入旧版账本备份成功 ✓')
+        return
+      }
+
+      const XLSX = await import('xlsx')
+      const csvText = ext === 'csv' ? await file.text() : ''
+      if (ext === 'csv') {
+        const backup = decodeBackupCsv(csvText)
+        if (backup) {
+          restoreBackup(backup, store, settings)
+          window.__toast?.('导入完整 CSV 备份成功 ✓')
+          return
+        }
+      }
+      const wb = ext === 'csv'
+        ? XLSX.read(csvText, { type: 'string', raw: true })
+        : XLSX.read(await file.arrayBuffer(), { type: 'array', cellDates: false })
+
+      const backup = decodeBackupWorkbook(XLSX, wb)
+      if (backup) {
+        restoreBackup(backup, store, settings)
+        window.__toast?.('导入完整 Excel 备份成功 ✓')
+        return
+      }
+
+      const { transactions, assets } = decodeLegacyWorkbook(XLSX, wb, store.categories)
+      store.addTransactions(transactions)
+      if (assets.length) store.importData({ assets })
+      window.__toast?.(`追加导入 ${transactions.length} 笔${assets.length ? `，恢复 ${assets.length} 个资产` : ''}成功 ✓`)
+    } catch (e) {
+      window.__toast?.(e.message || '导入失败，文件格式不对')
     }
-    reader.readAsText(file)
   }
   input.click()
 }
@@ -139,9 +139,9 @@ function doImport() {
         <button class="footer-btn" @click="showExportMenu = !showExportMenu"><IconDownload :size="15" /><span>导出</span></button>
         <Transition name="pop">
           <div v-if="showExportMenu" class="export-menu">
-            <button @click="exportExcel">Excel (.xlsx)</button>
-            <button @click="exportCSV">CSV (.csv)</button>
-            <button @click="exportJSON">JSON (完整备份)</button>
+            <button @click="exportExcel">Excel 完整备份（含 Key）</button>
+            <button @click="exportCSV">CSV 完整备份（含 Key）</button>
+            <button @click="exportJSON">JSON 完整备份（含 Key）</button>
           </div>
         </Transition>
       </div>
@@ -199,15 +199,22 @@ function doImport() {
 .month-arrow:hover { background: var(--surface-2); color: var(--text); }
 .month-label { font-weight: 600; font-size: .88rem; min-width: 5.5rem; text-align: center; }
 
-.footer { display: flex; gap: .35rem; padding-top: .5rem; }
+.footer {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .35rem; padding-top: .5rem;
+}
 .footer-btn {
-  flex: 1; display: flex; align-items: center; justify-content: center;
+  width: 100%; min-width: 0;
+  display: flex; align-items: center; justify-content: center;
+  flex-wrap: nowrap; white-space: nowrap;
   gap: .3rem; padding: .45rem; border-radius: var(--radius);
   font-size: .75rem; color: var(--text-3); transition: all .15s;
 }
+.footer-btn span { white-space: nowrap; }
+.footer-btn svg { flex-shrink: 0; }
 .footer-btn:hover { background: var(--surface-2); color: var(--text-2); }
 
-.export-wrap { position: relative; flex: 1; }
+.export-wrap { position: relative; min-width: 0; }
 .export-menu {
   position: absolute; bottom: calc(100% + .5rem); left: 0;
   background: var(--surface); border: 1px solid var(--border);

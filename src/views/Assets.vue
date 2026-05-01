@@ -73,45 +73,47 @@ const total = computed(() => store.assets.reduce((s, a) => s + a.balance, 0))
     </div>
 
     <!-- Edit Dialog -->
-    <div v-if="editingId !== null" class="overlay" @click.self="editingId = null">
-      <div class="dialog">
-        <div class="dialog-header">
-          <h2>{{ editingId > 0 ? '编辑资产' : '添加资产' }}</h2>
-          <button class="close-btn" @click="editingId = null"><IconX :size="18" /></button>
-        </div>
-        <form class="dialog-body" @submit.prevent="save">
-          <div class="form-group">
-            <label>账户名称</label>
-            <input v-model="form.name" placeholder="如：招商银行卡" required>
+    <Teleport to="body">
+      <div v-if="editingId !== null" class="overlay" @click.self="editingId = null">
+        <div class="dialog">
+          <div class="dialog-header">
+            <h2>{{ editingId > 0 ? '编辑资产' : '添加资产' }}</h2>
+            <button class="close-btn" @click="editingId = null"><IconX :size="18" /></button>
           </div>
-          <div class="form-row">
+          <form class="dialog-body" @submit.prevent="save">
             <div class="form-group">
-              <label>余额</label>
-              <div class="money-input">
-                <span class="prefix">¥</span>
-                <input v-model.number="form.balance" type="number" placeholder="0.00" step="0.01" required>
+              <label>账户名称</label>
+              <input v-model="form.name" placeholder="如：招商银行卡" required>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>余额</label>
+                <div class="money-input">
+                  <span class="prefix">¥</span>
+                  <input v-model.number="form.balance" type="number" placeholder="0.00" step="0.01" required>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>类型</label>
+                <select v-model="form.type">
+                  <option v-for="t in ASSET_TYPES" :key="t.id" :value="t.id">{{ t.name }}</option>
+                </select>
               </div>
             </div>
             <div class="form-group">
-              <label>类型</label>
-              <select v-model="form.type">
-                <option v-for="t in ASSET_TYPES" :key="t.id" :value="t.id">{{ t.name }}</option>
-              </select>
+              <label>备注 <span class="opt">可选</span></label>
+              <input v-model="form.note" placeholder="补充说明">
             </div>
-          </div>
-          <div class="form-group">
-            <label>备注 <span class="opt">可选</span></label>
-            <input v-model="form.note" placeholder="补充说明">
-          </div>
-          <div class="dialog-actions">
-            <button v-if="editingId > 0" type="button" class="del-btn" @click="remove">
-              <IconTrash :size="15" /> 删除
-            </button>
-            <button type="submit" class="save-btn">保存</button>
-          </div>
-        </form>
+            <div class="dialog-actions">
+              <button v-if="editingId > 0" type="button" class="del-btn" @click="remove">
+                <IconTrash :size="15" /> 删除
+              </button>
+              <button type="submit" class="save-btn">保存</button>
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
+    </Teleport>
   </section>
 </template>
 
@@ -161,20 +163,23 @@ const total = computed(() => store.assets.reduce((s, a) => s + a.balance, 0))
 /* Dialog */
 .overlay {
   position: fixed; inset: 0;
-  background: rgba(42,37,32,.35); backdrop-filter: blur(4px);
-  z-index: 200; display: flex; align-items: center; justify-content: center;
-  padding: 1rem; animation: fadeIn .2s ease;
+  background: rgba(42,37,32,.42); backdrop-filter: blur(6px);
+  z-index: 200; display: flex; align-items: flex-start; justify-content: center;
+  padding: clamp(1rem, 6vh, 3rem) 1rem 1rem;
+  overflow-y: auto; animation: fadeIn .2s ease;
 }
 .dialog {
   background: var(--surface); border-radius: var(--radius-lg);
   width: 100%; max-width: 400px; box-shadow: var(--shadow-lg);
+  max-height: calc(100dvh - 2rem);
+  display: flex; flex-direction: column; overflow: hidden;
   animation: slideUp .25s var(--ease-out);
 }
 .dialog-header { display: flex; justify-content: space-between; align-items: center; padding: 1.25rem 1.5rem .5rem; }
 .dialog-header h2 { font-family: var(--font-display); font-weight: 700; font-size: 1.1rem; }
 .close-btn { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: var(--text-3); transition: all .15s; }
 .close-btn:hover { background: var(--surface-2); color: var(--text); }
-.dialog-body { padding: .75rem 1.5rem 1.5rem; }
+.dialog-body { padding: .75rem 1.5rem 1.5rem; overflow-y: auto; }
 .form-group { margin-bottom: 1rem; }
 .form-group label { display: block; font-size: .8rem; font-weight: 600; color: var(--text-2); margin-bottom: .3rem; }
 .opt { font-weight: 400; color: var(--text-3); }
@@ -190,4 +195,10 @@ const total = computed(() => store.assets.reduce((s, a) => s + a.balance, 0))
 .save-btn:hover { background: var(--accent-hover); }
 .del-btn { display: flex; align-items: center; gap: .3rem; padding: .5rem .85rem; background: var(--red-soft); color: var(--red); border-radius: var(--radius); font-weight: 600; font-size: .82rem; transition: all .15s; }
 .del-btn:hover { background: var(--red); color: #fff; }
+
+@media (max-width: 720px) {
+  .overlay { padding: .75rem; }
+  .dialog { max-height: calc(100dvh - 1.5rem); }
+  .form-row { grid-template-columns: 1fr; }
+}
 </style>

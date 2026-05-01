@@ -1,5 +1,7 @@
 const DATA_KEY = 'mypocket_data'
 const SETTINGS_KEY = 'mypocket_settings'
+const DEFAULT_API_ENDPOINT = 'https://api.openai.com'
+const DEFAULT_MODEL = 'gpt-4o-mini'
 
 export function loadLedgerData() {
   try {
@@ -10,9 +12,10 @@ export function loadLedgerData() {
       transactions: d.transactions || [],
       assets: d.assets || [],
       categories: d.categories || [],
+      periodRanges: d.periodRanges || {},
     }
   } catch {
-    return { budgets: {}, transactions: [], assets: [] }
+    return { budgets: {}, transactions: [], assets: [], categories: [], periodRanges: {} }
   }
 }
 
@@ -25,12 +28,20 @@ export function loadSettings() {
     const raw = localStorage.getItem(SETTINGS_KEY)
     const s = raw ? JSON.parse(raw) : {}
     return {
-      apiEndpoint: s.apiEndpoint || 'https://api.openai.com',
+      apiEndpoint: s.apiEndpoint || DEFAULT_API_ENDPOINT,
       apiKey: s.apiKey || '',
-      model: s.model || 'gpt-4o-mini',
+      model: s.model || DEFAULT_MODEL,
+      apiPresets: Array.isArray(s.apiPresets) ? s.apiPresets : [],
+      activePresetId: s.activePresetId || '',
     }
   } catch {
-    return { apiEndpoint: 'https://api.openai.com', apiKey: '', model: 'gpt-4o-mini' }
+    return {
+      apiEndpoint: DEFAULT_API_ENDPOINT,
+      apiKey: '',
+      model: DEFAULT_MODEL,
+      apiPresets: [],
+      activePresetId: '',
+    }
   }
 }
 

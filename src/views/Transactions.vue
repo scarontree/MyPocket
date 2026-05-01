@@ -14,7 +14,7 @@ const grouped = computed(() => {
   return Object.keys(map).sort().reverse().map(date => ({
     date,
     label: fmtDate(date),
-    total: map[date].reduce((s, t) => s + t.amount, 0),
+    total: map[date].reduce((s, t) => s + (t.type === 'income' ? t.amount : -t.amount), 0),
     items: map[date],
   }))
 })
@@ -23,7 +23,7 @@ const grouped = computed(() => {
 <template>
   <section class="transactions" style="animation: fadeUp .35s var(--ease-out) both">
     <div class="tx-header">
-      <h3 class="sec-title">支出明细</h3>
+      <h3 class="sec-title">收支明细</h3>
       <button class="manual-btn" @click="editingId = -1">
         <IconEdit :size="15" /> 手动记一笔
       </button>
@@ -33,18 +33,18 @@ const grouped = computed(() => {
       <div v-for="group in grouped" :key="group.date">
         <div class="day-header">
           <span>{{ group.label }}</span>
-          <span class="day-total">小计 ¥{{ fmtMoney(group.total) }}</span>
+          <span class="day-total" :class="{ income: group.total >= 0, expense: group.total < 0 }">小计 {{ group.total >= 0 ? '+' : '-' }}¥{{ fmtMoney(Math.abs(group.total)) }}</span>
         </div>
         <div class="day-list">
           <div v-for="tx in group.items" :key="tx.id" class="tx-row" @click="editingId = tx.id">
             <div class="tx-icon" :style="{ background: store.getCat(tx.category).bg, color: store.getCat(tx.category).color }">
-              <component :is="CAT_ICONS[tx.category] || CAT_ICONS.other" :size="14" />
+              <component :is="CAT_ICONS[store.getCat(tx.category).icon] || CAT_ICONS.other" :size="14" />
             </div>
             <div class="tx-info">
               <div class="tx-name">{{ tx.name }}</div>
-              <div class="tx-meta">{{ store.getCat(tx.category).name }}{{ tx.note ? ' · ' + tx.note : '' }}</div>
+              <div class="tx-meta">{{ tx.type === 'income' ? '存入' : store.getCat(tx.category).name }}{{ tx.note ? ' · ' + tx.note : '' }}</div>
             </div>
-            <div class="tx-amt">-¥{{ fmtMoney(tx.amount) }}</div>
+            <div class="tx-amt" :class="{ income: tx.type === 'income' }">{{ tx.type === 'income' ? '+' : '-' }}¥{{ fmtMoney(tx.amount) }}</div>
           </div>
         </div>
       </div>
@@ -81,6 +81,8 @@ const grouped = computed(() => {
   font-size: .76rem; color: var(--text-3); font-weight: 500;
 }
 .day-total { font-variant-numeric: tabular-nums; }
+.day-total.income { color: var(--green); }
+.day-total.expense { color: var(--red); }
 .day-list { display: flex; flex-direction: column; gap: .3rem; }
 
 .tx-row {
@@ -98,6 +100,7 @@ const grouped = computed(() => {
 .tx-name { font-weight: 500; font-size: .86rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tx-meta { font-size: .7rem; color: var(--text-3); }
 .tx-amt { font-family: var(--font-display); font-weight: 700; font-size: .9rem; color: var(--red); flex-shrink: 0; font-variant-numeric: tabular-nums; }
+.tx-amt.income { color: var(--green); }
 
 .empty { text-align: center; padding: 3rem 1rem; }
 .empty-icon { margin-bottom: .75rem; }

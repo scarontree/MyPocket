@@ -43,7 +43,7 @@ const views = { dashboard: Dashboard, transactions: Transactions, assets: Assets
         </button>
       </header>
 
-      <SmartInput v-if="currentView === 'dashboard'" />
+      <SmartInput v-if="currentView === 'dashboard'" @openSettings="showSettings = true" />
 
       <KeepAlive>
         <component :is="views[currentView]" :key="currentView" />
@@ -63,10 +63,9 @@ const views = { dashboard: Dashboard, transactions: Transactions, assets: Assets
 <style scoped>
 .app { display: flex; min-height: 100dvh; }
 .main {
-  flex: 1;
-  margin-left: var(--sidebar-w);
+  width: min(1040px, calc(100vw - var(--sidebar-w) - 5rem));
+  margin-left: calc(var(--sidebar-w) + max(2.5rem, (100vw - var(--sidebar-w) - 1040px) / 2));
   padding: 2rem 2.5rem 5rem;
-  max-width: 820px;
 }
 .mobile-header {
   display: none;
@@ -101,7 +100,7 @@ const views = { dashboard: Dashboard, transactions: Transactions, assets: Assets
 .fab:hover { transform: scale(1.05); }
 
 @media (max-width: 720px) {
-  .main { margin-left: 0; padding: 0 1.15rem 6rem; }
+  .main { width: 100%; margin-left: 0; padding: 0 1.15rem 6rem; }
   .mobile-header { display: flex; }
   .fab { display: flex; }
 }
