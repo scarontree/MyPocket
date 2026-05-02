@@ -148,7 +148,7 @@ export const useLedgerStore = defineStore('ledger', () => {
   const totalExpense = computed(() => expenseTx.value.reduce((s, t) => s + t.amount, 0))
   const totalIncome = computed(() => incomeTx.value.reduce((s, t) => s + t.amount, 0))
   const netIncome = computed(() => totalIncome.value - totalExpense.value)
-  const remaining = computed(() => budget.value - totalExpense.value)
+  const remaining = computed(() => budget.value + totalIncome.value - totalExpense.value)
 
   // Get category by id (with fallback)
   function getCat(id) {

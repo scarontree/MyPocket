@@ -47,16 +47,21 @@ function confirmAll() {
     date: item.date,
     note: item.note || '',
   })))
-  assetItems.forEach(item => store.addAsset({
-    name: item.name,
-    balance: Number(item.balance),
-    type: item.assetType || 'other',
-    note: item.note || '',
-  }))
+  assetItems.forEach(item => {
+    const existing = store.assets.find(asset => asset.name.trim() === item.name.trim())
+    const data = {
+      name: item.name,
+      balance: Number(item.balance),
+      type: item.assetType || existing?.type || 'other',
+      note: item.note || existing?.note || '',
+    }
+    if (existing) store.updateAsset(existing.id, data)
+    else store.addAsset(data)
+  })
 
   const parts = []
   if (txItems.length) parts.push(`${txItems.length} 笔收支`)
-  if (assetItems.length) parts.push(`${assetItems.length} 个资产`)
+  if (assetItems.length) parts.push(`${assetItems.length} 个资产余额`)
   window.__toast?.('已记录 ' + parts.join('、') + ' ✓')
   emit('done')
 }

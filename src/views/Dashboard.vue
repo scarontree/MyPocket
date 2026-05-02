@@ -27,8 +27,9 @@ const daysRemaining = computed(() => {
   return Math.floor((endDate - startDate) / 86400000) + 1
 })
 const dailyAllowance = computed(() =>
-  store.budget > 0 && daysRemaining.value > 0 ? store.remaining / daysRemaining.value : null
+  (store.budget > 0 || store.totalIncome > 0) && daysRemaining.value > 0 ? store.remaining / daysRemaining.value : null
 )
+const moneyWithSign = value => `${value < 0 ? '-' : ''}¥${fmtMoney(value)}`
 
 function onBudgetChange(e) {
   store.setBudget(parseFloat(e.target.value) || 0)
@@ -79,10 +80,10 @@ function onPeriodEndChange(e) {
     <div class="stat-row">
       <div class="stat"><span class="stat-l">总支出</span><span class="stat-v expense">¥{{ fmtMoney(store.totalExpense) }}</span></div>
       <div class="stat"><span class="stat-l">总存入</span><span class="stat-v income">¥{{ fmtMoney(store.totalIncome) }}</span></div>
-      <div class="stat"><span class="stat-l">剩余</span><span class="stat-v remain">{{ store.budget > 0 ? '¥' + fmtMoney(store.remaining) : '--' }}</span></div>
+      <div class="stat"><span class="stat-l">可花</span><span class="stat-v remain">{{ store.budget > 0 || store.totalIncome > 0 ? moneyWithSign(store.remaining) : '--' }}</span></div>
       <div class="stat">
         <span class="stat-l">日均可花 · 剩{{ daysRemaining }}天</span>
-        <span class="stat-v daily">{{ dailyAllowance === null ? '--' : '¥' + fmtMoney(dailyAllowance) }}</span>
+        <span class="stat-v daily">{{ dailyAllowance === null ? '--' : moneyWithSign(dailyAllowance) }}</span>
       </div>
       <div class="stat"><span class="stat-l">笔数</span><span class="stat-v count">{{ store.monthTx.length }}</span></div>
     </div>
